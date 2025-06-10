@@ -2,6 +2,7 @@ import { Injectable, Injector } from '@angular/core';
 import { BehaviorSubject } from 'rxjs';
 import { ToastService } from './toast.service';
 import { PlayedService } from './played.service';
+import { OngoingService } from './ongoing.service';
 import * as log from 'electron-log';
 import Store from 'electron-store';
 
@@ -30,7 +31,11 @@ export class AudioService {
 	public volume: BehaviorSubject<number> = new BehaviorSubject(0);
 	public playbackRate: BehaviorSubject<number> = new BehaviorSubject(1.0);
 
-	constructor(private toast: ToastService, private played: PlayedService, private injector: Injector) {
+	// For ongoing episode tracking
+	private lastProgressSave: number = 0;
+	private progressSaveInterval: number = 5000; // Save progress every 5 seconds
+
+	constructor(private toast: ToastService, private played: PlayedService, private ongoing: OngoingService, private injector: Injector) {
 		this.initIpcListeners();
 		this.initAudio();
 		this.initAudioListeners();
@@ -111,8 +116,15 @@ export class AudioService {
 	}
 
 	private onTimeUpdate = () => {
-		this.percentPlayed.next((this.audio.currentTime / this.audio.duration) * 100 || 0);
+		const currentPercent = (this.audio.currentTime / this.audio.duration) * 100 || 0;
+		this.percentPlayed.next(currentPercent);
 		this.time.next(this.audio.currentTime);
+		
+		// Check if episode should be marked as ongoing (10% threshold)
+		this.checkOngoingThreshold(currentPercent);
+		
+		// Save progress periodically for ongoing episodes
+		this.saveProgressIfNeeded();
 	}
 
 	private onVolumeChange = () => {
@@ -143,6 +155,9 @@ export class AudioService {
 
 	private onEnded = () => {
 		log.info("Audio service :: Podcast ended.");
+		
+		// Remove from ongoing before marking as played
+		this.ongoing.removeFromOngoing(this.guid.value);
 		this.played.markAsPlayed(this.guid.value);
 		
 		// Try to play next episode from waitlist
@@ -210,6 +225,9 @@ export class AudioService {
 			podcastDescription: this.description.value,
 			podcastGUID: this.guid.value
 		});
+
+		// Check if this episode has saved progress and restore it
+		this.restoreOngoingPosition(podcast.guid);
 
 		this.updateMedia();
 	}
@@ -297,5 +315,82 @@ export class AudioService {
 			log.error("Audio service :: Error playing next from waitlist: " + error);
 			this.toast.toast("Podcast ended");
 		});
+	}
+
+	// Ongoing episode tracking methods
+	private checkOngoingThreshold(percentPlayed: number): void {
+		const currentGuid = this.guid.value;
+		
+		// Skip if already marked as played or if no guid
+		if (!currentGuid || this.played.playedEpisodes.value.includes(currentGuid)) {
+			return;
+		}
+
+		// Mark as ongoing if 10% threshold is reached and not already marked
+		if (percentPlayed >= 10 && !this.ongoing.isOngoing(currentGuid)) {
+			const episodeData = {
+				guid: currentGuid,
+				title: this.episode.value,
+				description: this.description.value,
+				src: this.audio.src,
+				duration: this.audio.duration,
+				currentTime: this.audio.currentTime,
+				percentPlayed: percentPlayed,
+				podcastTitle: this.podcast.value,
+				podcastRSS: this.rss.value,
+				podcastImage: this.podcastCover.value,
+				episodeImage: this.episodeCover.value
+			};
+			
+			this.ongoing.markAsOngoing(episodeData);
+			log.info("Audio service :: Episode marked as ongoing: " + currentGuid);
+		}
+	}
+
+	private saveProgressIfNeeded(): void {
+		const currentTime = Date.now();
+		const currentGuid = this.guid.value;
+		
+		// Save progress every 5 seconds for ongoing episodes
+		if (currentGuid && 
+			this.ongoing.isOngoing(currentGuid) && 
+			currentTime - this.lastProgressSave > this.progressSaveInterval) {
+			
+			this.ongoing.updateProgress(
+				currentGuid,
+				this.audio.currentTime,
+				this.percentPlayed.value
+			);
+			
+			this.lastProgressSave = currentTime;
+		}
+	}
+
+	private restoreOngoingPosition(guid: string): void {
+		const ongoingEpisode = this.ongoing.getOngoingEpisode(guid);
+		
+		if (ongoingEpisode && ongoingEpisode.currentTime > 0) {
+			// Wait for the audio to be loaded before setting the time
+			const restorePosition = () => {
+				if (this.audio.duration > 0) {
+					this.audio.currentTime = ongoingEpisode.currentTime;
+					log.info(`Audio service :: Restored position for ongoing episode: ${guid} at ${ongoingEpisode.currentTime}s`);
+					this.toast.toast(`Resuming from ${Math.floor(ongoingEpisode.currentTime / 60)}:${(Math.floor(ongoingEpisode.currentTime % 60)).toString().padStart(2, '0')}`);
+				} else {
+					// If duration not ready, try again after a short delay
+					setTimeout(restorePosition, 100);
+				}
+			};
+			
+			restorePosition();
+		}
+	}
+
+	// Public method to resume ongoing episode from specific position
+	resumeFromPosition(guid: string): void {
+		const ongoingEpisode = this.ongoing.getOngoingEpisode(guid);
+		if (ongoingEpisode) {
+			this.restoreOngoingPosition(guid);
+		}
 	}
 }

@@ -3,6 +3,7 @@ import { ActivatedRoute } from '@angular/router';
 import { AudioService } from '../services/audio.service';
 import { PodcastService } from '../services/podcast.service';
 import { PlayedService } from '../services/played.service';
+import { OngoingService } from '../services/ongoing.service';
 import { ToastService } from '../services/toast.service';
 import { Description } from '../pipes/description.pipe';
 import { FavouritesService } from '../services/favourites.service';
@@ -38,6 +39,7 @@ import { Subscription } from 'rxjs';
 export class PodcastComponent implements OnInit, OnDestroy {
 	private routeSubscription: Subscription;
 	private prevPlayedSubscription: Subscription;
+	private ongoingSubscription: Subscription;
 	private offlineSubscription: Subscription;
 	private favSubscription: Subscription;
 	private audioPlayingSubscription: Subscription;
@@ -82,6 +84,7 @@ export class PodcastComponent implements OnInit, OnDestroy {
 	public sortBy: string = "asc";
 	public latestEpisode: any = {};
 	public playedEpisodes: string[] = [];
+	public ongoingEpisodes: any = {};
 	public offlineEpisodes: string[] = [];
 	public query: string = "";
 	public favs: string[] = [];
@@ -89,6 +92,7 @@ export class PodcastComponent implements OnInit, OnDestroy {
 	constructor(private route: ActivatedRoute,
 		private audio: AudioService,
 		private prevPlayed: PlayedService,
+		private ongoing: OngoingService,
 		private podcastService: PodcastService,
 		private toast: ToastService,
 		private favouriteService: FavouritesService,
@@ -113,6 +117,11 @@ export class PodcastComponent implements OnInit, OnDestroy {
 				this.playedEpisodes = value;
 			});
 		});
+		this.ongoingSubscription = this.ongoing.ongoingEpisodes.subscribe(value => {
+			this.zone.run(() => {
+				this.ongoingEpisodes = value;
+			});
+		});
 		this.offlineSubscription = this.offlineService.offlineKeys.subscribe(value => {
 			this.zone.run(() => {
 				this.offlineEpisodes = value;
@@ -131,6 +140,7 @@ export class PodcastComponent implements OnInit, OnDestroy {
 	ngOnDestroy() {
 		if (this.routeSubscription) this.routeSubscription.unsubscribe();
 		if (this.prevPlayedSubscription) this.prevPlayedSubscription.unsubscribe();
+		if (this.ongoingSubscription) this.ongoingSubscription.unsubscribe();
 		if (this.offlineSubscription) this.offlineSubscription.unsubscribe();
 		if (this.favSubscription) this.favSubscription.unsubscribe();
 		if (this.audioPlayingSubscription) this.audioPlayingSubscription.unsubscribe();
@@ -252,5 +262,37 @@ export class PodcastComponent implements OnInit, OnDestroy {
 
 	addToWaitlist = (episode): void => {
 		this.waitlistService.addToWaitlist(episode, this.title, this.rss, this.image);
+	}
+
+	// Ongoing episode methods
+	isOngoing = (guid: string): boolean => {
+		return this.ongoingEpisodes[guid] !== undefined;
+	}
+
+	getOngoingProgress = (guid: string): number => {
+		const episode = this.ongoingEpisodes[guid];
+		return episode ? episode.percentPlayed : 0;
+	}
+
+	resumeEpisode = (episode: any): void => {
+		const ongoingEpisode = this.ongoingEpisodes[episode.guid];
+		if (ongoingEpisode) {
+			this.play(episode);
+			// Position will be restored automatically by the audio service
+		}
+	}
+
+	removeFromOngoing = (guid: string): void => {
+		this.ongoing.removeFromOngoing(guid);
+	}
+
+	getResumeTimeText = (guid: string): string => {
+		const episode = this.ongoingEpisodes[guid];
+		if (episode && episode.currentTime > 0) {
+			const minutes = Math.floor(episode.currentTime / 60);
+			const seconds = Math.floor(episode.currentTime % 60);
+			return `Resume from ${minutes}:${seconds.toString().padStart(2, '0')}`;
+		}
+		return 'Resume';
 	}
 }

@@ -34,9 +34,19 @@
 			<div id="latest-podcast-info">
 				<div id="latest-podcast-title">
 					<h3 class="primary-title truncate">
-						<fa-icon [icon]="playedEpisodes.indexOf(latestEpisode.guid) == -1 ? faCircle : faCheckCircle"
-							[ngClass]="playedEpisodes.indexOf(latestEpisode.guid) === -1 ? '':'played-episode'"
-							aria-label="Played status" data-pop data-pop-arrow></fa-icon> {{ latestEpisode.title }}
+						<div class="episode-status-container inline">
+							<fa-icon [icon]="playedEpisodes.indexOf(latestEpisode.guid) == -1 ? faCircle : faCheckCircle"
+								[ngClass]="{
+									'': playedEpisodes.indexOf(latestEpisode.guid) === -1 && !isOngoing(latestEpisode.guid),
+									'played-episode': playedEpisodes.indexOf(latestEpisode.guid) !== -1,
+									'ongoing-episode': isOngoing(latestEpisode.guid)
+								}"
+								aria-label="Played status" data-pop data-pop-arrow></fa-icon>
+							<div *ngIf="isOngoing(latestEpisode.guid)" class="progress-ring small"
+								[style.background]="'conic-gradient(var(--primary-color) ' + getOngoingProgress(latestEpisode.guid) + '%, transparent ' + getOngoingProgress(latestEpisode.guid) + '%)'">
+							</div>
+						</div>
+						{{ latestEpisode.title }}
 					</h3>
 					<div id="latest-podcast-actions">
 						<fa-icon [icon]="faInfoCircle"
@@ -78,8 +88,17 @@
 		</div>
 		<div class="podcast-item" [ngClass]="{'playing' : e.guid === currentGUID}" *ngFor="let e of episodes">
 			<div class="podcast-item-actions">
-				<fa-icon [icon]="playedEpisodes.indexOf(e.guid) === -1 ? faCircle : faCheckCircle "
-					[ngClass]="playedEpisodes.indexOf(e.guid)===-1 ? '' :'played-episode'"></fa-icon>
+				<div class="episode-status-container">
+					<fa-icon [icon]="playedEpisodes.indexOf(e.guid) === -1 ? faCircle : faCheckCircle"
+						[ngClass]="{
+							'': playedEpisodes.indexOf(e.guid) === -1 && !isOngoing(e.guid),
+							'played-episode': playedEpisodes.indexOf(e.guid) !== -1,
+							'ongoing-episode': isOngoing(e.guid)
+						}"></fa-icon>
+					<div *ngIf="isOngoing(e.guid)" class="progress-ring"
+						[style.background]="'conic-gradient(var(--primary-color) ' + getOngoingProgress(e.guid) + '%, transparent ' + getOngoingProgress(e.guid) + '%)'">
+					</div>
+				</div>
 			</div>
 			<div tabindex="0" class="podcast-item-info" (click)="play(e)" (keyup.enter)="play(e)">
 				<div class="podcast-item-title" [ngClass]="{'playing' : e.guid === currentGUID}">
@@ -89,6 +108,7 @@
 				<div class="podcast-item-details">
 					<div class="podcast-item-duration time">{{ e.duration | secondsToHhMmSs }}</div>
 					<div class="podcast-item-date time">{{ e.published | date }}</div>
+					<div *ngIf="isOngoing(e.guid)" class="ongoing-resume-text time">{{ getResumeTimeText(e.guid) }}</div>
 				</div>
 			</div>
 			<div class="podcast-item-actions">
@@ -99,6 +119,12 @@
 					<div class="dropdown-content podcast-dd">
 						<a class="dropdown-item" (click)="showDescription($event, e.title, e.description)">
 							<fa-icon [icon]="faInfoCircle"></fa-icon> Show description
+						</a>
+						<a *ngIf="isOngoing(e.guid)" class="dropdown-item" (click)="resumeEpisode(e)">
+							<fa-icon [icon]="faCircle"></fa-icon> {{ getResumeTimeText(e.guid) }}
+						</a>
+						<a *ngIf="isOngoing(e.guid)" class="dropdown-item" (click)="removeFromOngoing(e.guid)">
+							<fa-icon [icon]="faTimes"></fa-icon> Remove from ongoing
 						</a>
 						<a *ngIf="playedEpisodes.indexOf(e.guid) === -1" class="dropdown-item" (click)="markAsPlayed(e.guid)">
 							<fa-icon [icon]="faCheckCircle"></fa-icon> Mark as played

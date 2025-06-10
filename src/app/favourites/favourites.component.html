@@ -7,6 +7,8 @@
 		(click)="content = 'favourites'">PODCASTS</button>
 	<button class="btn-underline" [ngClass]="{'active': content == 'latest'}"
 		(click)="content = 'latest'">LATEST</button>
+	<button class="btn-underline" [ngClass]="{'active': content == 'ongoing'}"
+		(click)="content = 'ongoing'">ONGOING</button>
 	<button class="btn-underline" [ngClass]="{'active': content == 'offline'}"
 		(click)="content = 'offline'">OFFLINE</button>
 	<div class="banner-actions">
@@ -106,6 +108,72 @@
 						</a>
 						<a *ngIf="offlineEpisodeKeys.indexOf(l.guid) != -1" class="dropdown-item" (click)="removeDownload($event, l)">
 							<fa-icon [icon]="faTimes"></fa-icon> Remove download
+						</a>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+<div class="ongoing-episodes-container" *ngIf="content === 'ongoing'">
+	<!-- Empty state -->
+	<div class="empty-state" *ngIf="ongoingEpisodes.length === 0">
+		<div class="empty-state-icon">
+			<fa-icon [icon]="faPlay" class="large-icon"></fa-icon>
+		</div>
+		<h2 class="empty-state-title">No ongoing episodes</h2>
+		<p class="empty-state-description">
+			Episodes that you've started listening to will appear here.
+		</p>
+	</div>
+
+	<!-- Ongoing episodes list -->
+	<div class="ongoing-episodes" *ngIf="ongoingEpisodes.length > 0">
+		<div class="ongoing-episode-card" 
+			 *ngFor="let o of ongoingEpisodes">
+
+			<div class="ongoing-episode-artwork" (click)="playOngoingEpisode(o)">
+				<div class="image-container">
+					<img class="image-cover" 
+						 [src]="o.episodeImage || o.podcastImage || 'assets/images/album_cover.png'" 
+						 [alt]="o.title"
+						 onload="this.style.opacity = 1">
+					<div class="play-overlay">
+						<fa-icon [icon]="faPlay" class="play-icon"></fa-icon>
+					</div>
+				</div>
+				<div class="progress-bar">
+					<div class="progress-fill" [style.width.%]="getProgressPercentage(o)"></div>
+				</div>
+			</div>
+
+			<div class="ongoing-episode-info" (click)="playOngoingEpisode(o)">
+				<div class="ongoing-episode-title">
+					{{ o.title }}
+				</div>
+				<div class="ongoing-episode-podcast" [routerLink]="['/podcast', o.podcastRSS]" (click)="$event.stopPropagation()">
+					{{ o.podcastTitle }}
+				</div>
+				<div class="ongoing-episode-meta">
+					<span class="ongoing-episode-progress">{{ getProgressPercentage(o) }}% complete</span>
+					<span class="ongoing-episode-time">{{ getProgressTime(o) }}</span>
+				</div>
+			</div>
+
+			<div class="ongoing-episode-actions">
+				<div class="dropdown">
+					<button tabindex="-1" class="dropbtn">
+						<fa-icon [icon]="faEllipsisV"></fa-icon>
+					</button>
+					<div class="dropdown-content podcast-dd">
+						<a class="dropdown-item" (click)="showDescription($event, o.title, o.description)">
+							<fa-icon [icon]="faInfoCircle"></fa-icon> Show description
+						</a>
+						<a class="dropdown-item" (click)="addToWaitlist(o)">
+							<fa-icon [icon]="faPlus"></fa-icon> Add to waitlist
+						</a>
+						<a class="dropdown-item" (click)="removeFromOngoing($event, o)">
+							<fa-icon [icon]="faTimes"></fa-icon> Remove from ongoing
 						</a>
 					</div>
 				</div>
