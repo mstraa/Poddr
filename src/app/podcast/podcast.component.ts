@@ -7,6 +7,7 @@ import { ToastService } from '../services/toast.service';
 import { Description } from '../pipes/description.pipe';
 import { FavouritesService } from '../services/favourites.service';
 import { OfflineService } from '../services/offline.service';
+import { WaitlistService } from '../services/waitlist.service';
 import { clipboard, shell } from 'electron';
 import { faHeart, faCircle, faEnvelope, faCopy } from '@fortawesome/free-regular-svg-icons';
 import {
@@ -20,7 +21,8 @@ import {
 	faEllipsisV,
 	faTimes,
 	faMusic,
-	faExternalLinkAlt
+	faExternalLinkAlt,
+	faPlus
 } from '@fortawesome/free-solid-svg-icons';
 import parsePodcast from 'node-podcast-parser';
 import * as log from 'electron-log';
@@ -61,6 +63,7 @@ export class PodcastComponent implements OnInit, OnDestroy {
 	public faMusic = faMusic;
 	public faExternalLinkAlt = faExternalLinkAlt;
 	public faCopy = faCopy;
+	public faPlus = faPlus;
 
 	public currentGUID: string = "";
 	public isPlaying: Boolean = false;
@@ -90,6 +93,7 @@ export class PodcastComponent implements OnInit, OnDestroy {
 		private toast: ToastService,
 		private favouriteService: FavouritesService,
 		private offlineService: OfflineService,
+		private waitlistService: WaitlistService,
 		private descriptionPipe: Description,
 		private zone: NgZone) { }
 
@@ -244,5 +248,9 @@ export class PodcastComponent implements OnInit, OnDestroy {
 
 	unmarkAsPlayed = (guid): void => {
 		this.prevPlayed.unmarkAsPlayed(guid);
+	}
+
+	addToWaitlist = (episode): void => {
+		this.waitlistService.addToWaitlist(episode, this.title, this.rss, this.image);
 	}
 }

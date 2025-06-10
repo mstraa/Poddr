@@ -5,6 +5,7 @@ import { NgSelectModule } from '@ng-select/ng-select';
 import { FormsModule } from '@angular/forms';
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
+import { DragDropModule } from '@angular/cdk/drag-drop';
 
 // Pipes
 import { ItunesImage } from './pipes/itunes-image.pipe';
@@ -22,6 +23,7 @@ import { FavouritesComponent } from './favourites/favourites.component';
 import { SearchComponent } from './search/search.component';
 import { SettingsComponent } from './settings/settings.component';
 import { PodcastComponent } from './podcast/podcast.component';
+import { WaitlistComponent } from './waitlist/waitlist.component';
 
 @NgModule({ declarations: [
         AppComponent,
@@ -35,11 +37,13 @@ import { PodcastComponent } from './podcast/podcast.component';
         FavouritesComponent,
         SearchComponent,
         SettingsComponent,
-        PodcastComponent
+        PodcastComponent,
+        WaitlistComponent
     ],
     bootstrap: [AppComponent], imports: [BrowserModule,
         FormsModule,
         NgSelectModule,
         AppRoutingModule,
-        FontAwesomeModule], providers: [provideHttpClient(withInterceptorsFromDi())] })
+        FontAwesomeModule,
+        DragDropModule], providers: [provideHttpClient(withInterceptorsFromDi())] })
 export class AppModule { }

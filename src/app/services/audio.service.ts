@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, Injector } from '@angular/core';
 import { BehaviorSubject } from 'rxjs';
 import { ToastService } from './toast.service';
 import { PlayedService } from './played.service';
@@ -30,7 +30,7 @@ export class AudioService {
 	public volume: BehaviorSubject<number> = new BehaviorSubject(0);
 	public playbackRate: BehaviorSubject<number> = new BehaviorSubject(1.0);
 
-	constructor(private toast: ToastService, private played: PlayedService) {
+	constructor(private toast: ToastService, private played: PlayedService, private injector: Injector) {
 		this.initIpcListeners();
 		this.initAudio();
 		this.initAudioListeners();
@@ -143,8 +143,10 @@ export class AudioService {
 
 	private onEnded = () => {
 		log.info("Audio service :: Podcast ended.");
-		this.toast.toast("Podcast ended");
 		this.played.markAsPlayed(this.guid.value);
+		
+		// Try to play next episode from waitlist
+		this.playNextInWaitlist();
 	}
 
 	private onError = (error) => {
@@ -263,5 +265,37 @@ export class AudioService {
 
 	getAudio(): HTMLAudioElement {
 		return this.audio;
+	}
+
+	playNextInWaitlist(): void {
+		// Use async import to avoid circular dependency
+		import('./waitlist.service').then((module) => {
+			const waitlistServiceInstance = this.injector.get(module.WaitlistService);
+			const nextEpisode = waitlistServiceInstance.getNextEpisode();
+			
+			if (nextEpisode) {
+				log.info("Audio service :: Playing next episode from waitlist: " + nextEpisode.title);
+				
+				const podcast = {
+					src: nextEpisode.src,
+					episodeTitle: nextEpisode.title,
+					description: nextEpisode.description,
+					guid: nextEpisode.guid,
+					cover: nextEpisode.image
+				};
+				
+				this.loadAudio(podcast, nextEpisode.podcastTitle, nextEpisode.podcastRSS, nextEpisode.podcastImage);
+				this.play();
+				
+				// Remove the played episode from waitlist
+				waitlistServiceInstance.removeFirstEpisode();
+				this.toast.toast("Playing next from waitlist: " + nextEpisode.title);
+			} else {
+				this.toast.toast("Podcast ended - Waitlist is empty");
+			}
+		}).catch((error) => {
+			log.error("Audio service :: Error playing next from waitlist: " + error);
+			this.toast.toast("Podcast ended");
+		});
 	}
 }

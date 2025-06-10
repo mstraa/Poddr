@@ -6,7 +6,7 @@ let tray = null;
 module.exports = (mainWindow) => {
 	log.info("Main Process :: Loading Tray module.");
 	try {
-		const iconPath = path.join(__dirname, './images/logo.png');
+		const iconPath = path.join(__dirname, './images/logoTemplate.png');
 		tray = new Tray(nativeImage.createFromPath(iconPath));
 		const ctxMenu = Menu.buildFromTemplate([{
 			label: 'Poddr', click: () => {

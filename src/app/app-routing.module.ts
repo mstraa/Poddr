@@ -5,12 +5,14 @@ import { FavouritesComponent } from './favourites/favourites.component';
 import { SearchComponent } from './search/search.component';
 import { SettingsComponent } from './settings/settings.component';
 import { PodcastComponent } from './podcast/podcast.component';
+import { WaitlistComponent } from './waitlist/waitlist.component';
 import * as log from 'electron-log';
 
 const routes: Routes = [
 	{ path: "", redirectTo: "/toplists", pathMatch: "full" },
 	{ path: "toplists", component: ToplistsComponent },
 	{ path: "favourites", component: FavouritesComponent },
+	{ path: "waitlist", component: WaitlistComponent },
 	{ path: "search", component: SearchComponent },
 	{ path: "settings", component: SettingsComponent },
 	{ path: "podcast/:id", component: PodcastComponent }

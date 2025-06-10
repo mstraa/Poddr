@@ -1,6 +1,6 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { AudioService } from '../services/audio.service';
-import { faFire, faSearch, faTools } from '@fortawesome/free-solid-svg-icons';
+import { faFire, faSearch, faTools, faList } from '@fortawesome/free-solid-svg-icons';
 import { faHeart } from '@fortawesome/free-regular-svg-icons';
 import { Subscription } from 'rxjs';
 
@@ -21,6 +21,7 @@ export class SidenavComponent implements OnInit, OnDestroy {
 	public faSearch = faSearch;
 	public faTools = faTools;
 	public faHeart = faHeart;
+	public faList = faList;
 
 	constructor(private audio: AudioService) { }
 

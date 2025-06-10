@@ -106,6 +106,9 @@
 						<a *ngIf="playedEpisodes.indexOf(e.guid) != -1" class="dropdown-item" (click)="unmarkAsPlayed(e.guid)">
 							<fa-icon [icon]="faCircle"></fa-icon> Mark as unplayed
 						</a>
+						<a class="dropdown-item" (click)="addToWaitlist(e)">
+							<fa-icon [icon]="faPlus"></fa-icon> Add to waitlist
+						</a>
 						<a *ngIf="offlineEpisodes.indexOf(e.guid) === -1" class="dropdown-item" (click)="download($event, e)">
 							<fa-icon [icon]="faDownload"></fa-icon> Download
 						</a>

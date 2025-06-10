@@ -1,0 +1,87 @@
+<div class="waitlist-container">
+	<div class="waitlist-header">
+		<h1 class="primary-title">
+			<fa-icon [icon]="faList" class="header-icon"></fa-icon>
+			Waitlist
+		</h1>
+		<div class="waitlist-actions" *ngIf="episodes.length > 0">
+			<button class="btn-secondary" (click)="clearWaitlist()" aria-label="Clear waitlist">
+				<fa-icon [icon]="faTrash"></fa-icon>
+				Clear All
+			</button>
+		</div>
+	</div>
+
+	<!-- Empty state -->
+	<div class="empty-state" *ngIf="episodes.length === 0">
+		<div class="empty-state-icon">
+			<fa-icon [icon]="faList" class="large-icon"></fa-icon>
+		</div>
+		<h2 class="empty-state-title">Your waitlist is empty</h2>
+		<p class="empty-state-description">
+			Episodes you add to your waitlist will appear here and play automatically in sequence.
+		</p>
+		<button class="btn-primary" routerLink="/search" aria-label="Browse podcasts">
+			Browse Podcasts
+		</button>
+	</div>
+
+	<!-- Episode list with drag and drop -->
+	<div class="waitlist-episodes" *ngIf="episodes.length > 0" cdkDropList (cdkDropListDropped)="drop($event)">
+		<div class="episode-card" 
+			 *ngFor="let episode of episodes; let i = index" 
+			 [ngClass]="{'playing': episode.guid === currentGUID}"
+			 cdkDrag>
+			
+			<div class="drag-handle" cdkDragHandle>
+				<fa-icon [icon]="faGripVertical" class="drag-icon"></fa-icon>
+			</div>
+
+			<div class="episode-artwork" (click)="playEpisode(episode)">
+				<div class="image-container">
+					<img class="image-cover" 
+						 [src]="episode.image || episode.podcastImage || 'assets/images/album_cover.png'" 
+						 [alt]="episode.title"
+						 onload="this.style.opacity = 1">
+					<div class="play-overlay">
+						<fa-icon [icon]="faPlay" class="play-icon"></fa-icon>
+					</div>
+				</div>
+			</div>
+
+			<div class="episode-info" (click)="playEpisode(episode)">
+				<div class="episode-title" [ngClass]="{'playing': episode.guid === currentGUID}">
+					{{ episode.title }}
+				</div>
+				<div class="episode-podcast" (click)="goToPodcast(episode); $event.stopPropagation()">
+					{{ episode.podcastTitle }}
+				</div>
+				<div class="episode-meta">
+					<span class="episode-duration">{{ formatDuration(episode.duration) }}</span>
+					<span class="episode-date">{{ episode.published | date:'short' }}</span>
+				</div>
+			</div>
+
+			<div class="episode-actions">
+				<button class="remove-btn" 
+						(click)="removeEpisode(episode)" 
+						aria-label="Remove from waitlist">
+					<fa-icon [icon]="faTimes"></fa-icon>
+				</button>
+			</div>
+
+			<!-- Drag preview template -->
+			<div class="drag-preview" *cdkDragPreview>
+				<div class="episode-card-preview">
+					<img class="episode-artwork-preview" 
+						 [src]="episode.image || episode.podcastImage || 'assets/images/album_cover.png'" 
+						 [alt]="episode.title">
+					<div class="episode-info-preview">
+						<div class="episode-title-preview">{{ episode.title }}</div>
+						<div class="episode-podcast-preview">{{ episode.podcastTitle }}</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</div> 
