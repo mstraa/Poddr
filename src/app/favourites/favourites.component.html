@@ -36,20 +36,81 @@
 		</div>
 	</div>
 </div>
-<div class="podcast-list" *ngIf="content === 'latest'">
-	<div class="podcast-list-item shadow" *ngFor="let l of latestEpisodes">
-		<a class="podcast-list-item-image" (click)="playEpisode(l)">
-			<div class="image-container">
-				<img class="image-cover" [src]="l.cover || 'assets/images/album_cover.png'"
-					onload="this.style.opacity = 1">
-			</div>
-		</a>
-		<div class="podcast-list-item-info" tabindex="-1" (click)="playEpisode(l)">
-			<h5 class="secondary-title truncate" [routerLink]="['/podcast', l.rss]">{{ l.podcast }}</h5>
-			<h1 class="primary-title truncate">{{ l.title }}</h1>
-			<p class="secondary-text truncate">{{ l.date | date }}</p>
+<div class="latest-episodes-container" *ngIf="content === 'latest'">
+	<!-- Empty state -->
+	<div class="empty-state" *ngIf="latestEpisodes.length === 0">
+		<div class="empty-state-icon">
+			<fa-icon [icon]="faPlay" class="large-icon"></fa-icon>
 		</div>
-		<div class="podcast-list-item-actions"></div>
+		<h2 class="empty-state-title">No latest episodes</h2>
+		<p class="empty-state-description">
+			Latest episodes from your favorite podcasts will appear here.
+		</p>
+	</div>
+
+	<!-- Episode list -->
+	<div class="latest-episodes" *ngIf="latestEpisodes.length > 0">
+		<div class="episode-card" 
+			 *ngFor="let l of latestEpisodes">
+
+			<div class="episode-status">
+				<fa-icon [icon]="playedEpisodes.indexOf(l.guid) === -1 ? faCircle : faCheckCircle"
+					[ngClass]="playedEpisodes.indexOf(l.guid) === -1 ? '' : 'played-episode'"
+					aria-label="Played status"></fa-icon>
+			</div>
+
+			<div class="episode-artwork" (click)="playEpisode(l)">
+				<div class="image-container">
+					<img class="image-cover" 
+						 [src]="l.cover || 'assets/images/album_cover.png'" 
+						 [alt]="l.title"
+						 onload="this.style.opacity = 1">
+					<div class="play-overlay">
+						<fa-icon [icon]="faPlay" class="play-icon"></fa-icon>
+					</div>
+				</div>
+			</div>
+
+			<div class="episode-info" (click)="playEpisode(l)">
+				<div class="episode-title">
+					{{ l.title }}
+				</div>
+				<div class="episode-podcast" [routerLink]="['/podcast', l.rss]" (click)="$event.stopPropagation()">
+					{{ l.podcast }}
+				</div>
+				<div class="episode-meta">
+					<span class="episode-date">{{ l.date | date:'short' }}</span>
+				</div>
+			</div>
+
+			<div class="episode-actions">
+				<div class="dropdown">
+					<button tabindex="-1" class="dropbtn">
+						<fa-icon [icon]="faEllipsisV"></fa-icon>
+					</button>
+					<div class="dropdown-content podcast-dd">
+						<a class="dropdown-item" (click)="showDescription($event, l.title, l.description)">
+							<fa-icon [icon]="faInfoCircle"></fa-icon> Show description
+						</a>
+						<a *ngIf="playedEpisodes.indexOf(l.guid) === -1" class="dropdown-item" (click)="markAsPlayed(l.guid)">
+							<fa-icon [icon]="faCheckCircle"></fa-icon> Mark as played
+						</a>
+						<a *ngIf="playedEpisodes.indexOf(l.guid) != -1" class="dropdown-item" (click)="unmarkAsPlayed(l.guid)">
+							<fa-icon [icon]="faCircle"></fa-icon> Mark as unplayed
+						</a>
+						<a class="dropdown-item" (click)="addToWaitlist(l)">
+							<fa-icon [icon]="faPlus"></fa-icon> Add to waitlist
+						</a>
+						<a *ngIf="offlineEpisodeKeys.indexOf(l.guid) === -1" class="dropdown-item" (click)="download($event, l)">
+							<fa-icon [icon]="faDownload"></fa-icon> Download
+						</a>
+						<a *ngIf="offlineEpisodeKeys.indexOf(l.guid) != -1" class="dropdown-item" (click)="removeDownload($event, l)">
+							<fa-icon [icon]="faTimes"></fa-icon> Remove download
+						</a>
+					</div>
+				</div>
+			</div>
+		</div>
 	</div>
 </div>
 <div class="offline-episodes" *ngIf="content === 'offline'">

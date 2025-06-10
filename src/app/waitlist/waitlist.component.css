@@ -105,6 +105,11 @@
 	color: var(--secondary-text-color);
 }
 
+.empty-state .btn-primary {
+	margin: 0 auto;
+	display: inline-flex;
+}
+
 /* Episode list */
 .waitlist-episodes {
 	display: flex;

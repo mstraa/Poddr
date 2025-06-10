@@ -3,7 +3,9 @@ import { AudioService } from '../services/audio.service';
 import { FavouritesService } from '../services/favourites.service';
 import { OfflineService } from '../services/offline.service';
 import { ToastService } from '../services/toast.service';
-import { faPlus, faTimes } from '@fortawesome/free-solid-svg-icons';
+import { PlayedService } from '../services/played.service';
+import { WaitlistService } from '../services/waitlist.service';
+import { faPlus, faTimes, faPlay, faEllipsisV, faCircle, faCheckCircle, faInfoCircle, faDownload } from '@fortawesome/free-solid-svg-icons';
 import { Subscription } from 'rxjs';
 
 @Component({
@@ -16,16 +18,26 @@ export class FavouritesComponent implements OnInit, OnDestroy {
 	private offlineSubscription: Subscription;
 	private favSubscription: Subscription;
 	private favEpisodesSubscription: Subscription;
+	private playedSubscription: Subscription;
+	private offlineKeysSubscription: Subscription;
 
 	public favourites: Array<Object> = [];
 	public offlineEpisodes: Array<Object> = [];
+	public offlineEpisodeKeys: string[] = [];
 	public latestEpisodes: Array<Object> = [];
-	public content: string = 'favourites';
+	public playedEpisodes: string[] = [];
+	public content: string = 'latest';
 
 	public faPlus = faPlus;
 	public faTimes = faTimes;
+	public faPlay = faPlay;
+	public faEllipsisV = faEllipsisV;
+	public faCircle = faCircle;
+	public faCheckCircle = faCheckCircle;
+	public faInfoCircle = faInfoCircle;
+	public faDownload = faDownload;
 
-	constructor(private audio: AudioService, private favService: FavouritesService, private offlineService: OfflineService, private toast: ToastService) { }
+	constructor(private audio: AudioService, private favService: FavouritesService, private offlineService: OfflineService, private toast: ToastService, private playedService: PlayedService, private waitlistService: WaitlistService) { }
 
 	ngOnInit() {
 		this.favSubscription = this.favService.favourites.subscribe(value => {
@@ -41,12 +53,20 @@ export class FavouritesComponent implements OnInit, OnDestroy {
 				return aDate > bDate ? -1 : bDate > aDate ? 1 : 0;
 			}).slice(0, 100);
 		});
+		this.playedSubscription = this.playedService.playedEpisodes.subscribe(value => {
+			this.playedEpisodes = value;
+		});
+		this.offlineKeysSubscription = this.offlineService.offlineKeys.subscribe(value => {
+			this.offlineEpisodeKeys = value;
+		});
 	}
 
 	ngOnDestroy() {
 		if (this.favSubscription) this.favSubscription.unsubscribe();
 		if (this.offlineSubscription) this.offlineSubscription.unsubscribe();
 		if (this.favEpisodesSubscription) this.favEpisodesSubscription.unsubscribe();
+		if (this.playedSubscription) this.playedSubscription.unsubscribe();
+		if (this.offlineKeysSubscription) this.offlineKeysSubscription.unsubscribe();
 	}
 
 	remove = (rss): void => {
@@ -76,5 +96,33 @@ export class FavouritesComponent implements OnInit, OnDestroy {
 		this.toast.confirmModal().then((res) => {
 			if (res.value) this.offlineService.remove(guid);
 		});
+	}
+
+	markAsPlayed = (guid): void => {
+		this.playedService.markAsPlayed(guid);
+	}
+
+	unmarkAsPlayed = (guid): void => {
+		this.playedService.unmarkAsPlayed(guid);
+	}
+
+	addToWaitlist = (episode): void => {
+		this.waitlistService.addToWaitlist(episode, episode.podcast, episode.rss, episode.cover);
+		this.toast.toastSuccess('Added to waitlist: ' + episode.title);
+	}
+
+	showDescription = (event, title, description): void => {
+		event.stopPropagation();
+		this.toast.modal(title, description);
+	}
+
+	download = (event, episode): void => {
+		event.stopPropagation();
+		this.offlineService.download(episode.podcast, episode.rss, episode);
+	}
+
+	removeDownload = (event, episode): void => {
+		event.stopPropagation();
+		this.offlineService.remove(episode.guid);
 	}
 }
