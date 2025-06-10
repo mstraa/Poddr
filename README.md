@@ -1,3 +1,16 @@
+### Disclaimer
+
+This fork is for me, to make some minors updates for MacOS and vibe adding features.
+
+To use it, build it on your machine (yarn run dist) or follow the Build section bellow.
+
+### Added content of this fork :
+
+10 june 2025 :
+- waitlist feature: ability to have a queue and manage it in a new section called Waitlist
+- tray icon kinda fixed, on the official git, the tray icon was HUGE (half my top bar ^^) 
+- minor css change (remove top orange border and set podcast-item border to be gray)
+
 <div align="center">
     <img src="docs/images/icon.png" alt="Poddr" width="75" height="75">
     <h1>Poddr</h1>
